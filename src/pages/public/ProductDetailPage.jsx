@@ -4,12 +4,19 @@ import ProductCard from "../../components/common/ProductCard";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 
+// THÊM MỚI: Import Service gọi API
 import productService from "../../services/productService";
 
 
 
-
+// =========================================================
+// TỪ ĐIỂN DỊCH THUẬT THÔNG SỐ KỸ THUẬT (Mapping Dictionary)
+// =========================================================
+// =========================================================
+// TỪ ĐIỂN DỊCH THUẬT THÔNG SỐ KỸ THUẬT (Chuẩn hóa V2.0)
+// =========================================================
 const specTranslations = {
+  // --- NHÓM THÔNG SỐ LỌC CHUNG (Shared Filters) ---
   os: "Hệ điều hành",
   series: "Dòng sản phẩm",
   color: "Màu sắc",
@@ -17,6 +24,7 @@ const specTranslations = {
   storage_capacity: "Dung lượng lưu trữ",
   screen_size: "Kích thước màn hình",
 
+  // --- NHÓM THÔNG SỐ CHI TIẾT (Details) ---
   // 1. Xử lý & Hiệu năng
   cpu_type: "Loại CPU / Chip",
   cpu_detail: "Chi tiết CPU / Chip xử lý",
@@ -50,7 +58,10 @@ const specTranslations = {
   security: "Bảo mật",
   features: "Tính năng nổi bật"
 };
-
+// ---------------------------------------------------------
+// 1. COMPONENT ĐIỀU HƯỚNG SLIDER (THAY ĐỔI: Trả về HTML gốc của Electro)
+// ---------------------------------------------------------
+// Bỏ hết các style inline rườm rà, nhường lại sân khấu cho file style.css của template
 const MainPrev = ({ className, onClick }) => (
   <button className={className} onClick={onClick}>
     <i className="fa fa-angle-left"></i>
@@ -74,14 +85,18 @@ const ThumbNext = ({ className, onClick }) => (
     <i className="fa fa-angle-down"></i>
   </button>
 );
-
+// ---------------------------------------------------------
+// 2. MAIN COMPONENT: PRODUCT DETAIL PAGE
+// ---------------------------------------------------------
 export default function ProductDetailPage() {
   const { id } = useParams();
 
+  // --- STATE QUẢN LÝ DỮ LIỆU ---
   const [isLoading, setIsLoading] = useState(true);
   const [product, setProduct] = useState(null);
   
-  const [reviews, _setReviews] = useState([]);
+  // Các state tĩnh giữ lại cho sau này
+  const [reviews] = useState([]);
   const [related, setRelated] = useState([]);
   const [activeTab, setActiveTab] = useState("tab1");
   const [nav1, setNav1] = useState(null);
@@ -92,14 +107,16 @@ export default function ProductDetailPage() {
 
   const Slick = Slider && Slider.default ? Slider.default : Slider;
 
+  // GỌI API TỪ SPRING BOOT DỰA VÀO ID TRÊN URL
   useEffect(() => {
     const fetchProductDetail = async () => {
       setIsLoading(true);
       try {
         const response = await productService.getProductById(id);
-        const data = response.data ? response.data : response;
+        const data = response.result || response;
         setProduct(data);
         
+        // GIỮ NGUYÊN: Dữ liệu tĩnh của Related Products để UI không bị trống
         setRelated([
           { id: 1, name: "Tai nghe Marshall", price: 2800000, oldPrice: 3000000, imageUrl: "/img/product01.png" },
           { id: 2, name: "Ốp lưng tai nghe", price: 200000, oldPrice: 250000, imageUrl: "/img/product02.png" },
@@ -117,6 +134,7 @@ export default function ProductDetailPage() {
 
   const handleTabClick = (tabKey) => {
     setActiveTab(tabKey);
+    // TODO: Chờ API Reviews sau này
   };
 
   const handleAddToCart = () => {
@@ -134,6 +152,7 @@ export default function ProductDetailPage() {
 
   return (
     <>
+      {/* BREADCRUMB ĐỘNG */}
       <div id="breadcrumb" className="section">
         <div className="container">
           <div className="row">
@@ -152,6 +171,7 @@ export default function ProductDetailPage() {
         <div className="container">
           <div className="row">
             
+            {/* ẢNH LỚN MAP TỪ KHỐI 'images' */}
             <div className="col-md-5 col-md-push-2">
               <div id="product-main-img" style={{ position: "relative" }}>
                 <Slick
@@ -172,6 +192,7 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
+            {/* CỘT ẢNH NHỎ THUMBNAILS */}
             <div className="col-md-2 col-md-pull-5">
               <div id="product-imgs">
                 <Slick
@@ -194,6 +215,7 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
+            {/* PRODUCT DETAILS CHÍNH */}
             <div className="col-md-5">
               <div className="product-details">
                 <h2 className="product-name">{product.name}</h2>
@@ -202,6 +224,7 @@ export default function ProductDetailPage() {
                   <h3 className="product-price">
                     {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
                   </h3>
+                  {/* Trạng thái tồn kho động */}
                   <span className="product-available" style={{ color: product.stockQuantity > 0 ? '#D10024' : '#999' }}>
                     {product.stockQuantity > 0 ? "IN STOCK" : "OUT OF STOCK"}
                   </span>
@@ -209,6 +232,7 @@ export default function ProductDetailPage() {
 
                 <p>{product.brand?.description}</p>
 
+                {/* FORM CHỌN BIẾN THỂ (Variants) */}
                 <div className="product-options">
                   <label> Size
                     <select className="input-select" value={selectedSize} onChange={(e) => setSelectedSize(e.target.value)}>
@@ -241,6 +265,7 @@ export default function ProductDetailPage() {
                   </button>
                 </div>
                 
+                {/* THAY ĐỔI: Phục hồi khu vực Wishlist, Category, Share như ảnh yêu cầu */}
                 <ul className="product-btns">
                   <li><a href="#"><i className="fa fa-heart-o"></i> add to wishlist</a></li>
                   <li><a href="#"><i className="fa fa-exchange"></i> add to compare</a></li>
@@ -267,6 +292,7 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
+            {/* PRODUCT TAB (GIỮ NGUYÊN) */}
             <div className="col-md-12">
               <div id="product-tab">
                 <ul className="tab-nav">
@@ -289,11 +315,14 @@ export default function ProductDetailPage() {
                       <div className="col-md-8 col-md-offset-2">
                         <table className="table table-striped" style={{ border: '1px solid #E4E7ED' }}>
                           <tbody>
+                            {/* Quét qua Object JSON và dịch tên Key */}
                             {product.specifications && Object.entries(product.specifications).map(([key, value]) => (
                               <tr key={key}>
+                                {/* Cột Tên thông số: Tra từ điển, nếu không có thì tự xóa dấu gạch dưới và in hoa chữ cái đầu */}
                                 <th style={{ width: '30%', padding: '12px', color: '#333' }}>
                                   {specTranslations[key] || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                                 </th>
+                                {/* Cột Giá trị */}
                                 <td style={{ padding: '12px', color: '#666' }}>{value}</td>
                               </tr>
                             ))}
@@ -318,6 +347,7 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
+      {/* RELATED PRODUCTS (GIỮ NGUYÊN) */}
       <div className="section">
         <div className="container">
           <div className="row">

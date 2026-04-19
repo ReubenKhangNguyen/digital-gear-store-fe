@@ -1,0 +1,330 @@
+/* src/assets/css/admin-style.css */
+/* Kế thừa bảng màu của Digital Store */
+:root {
+  --admin-primary: #C026D3; /* Magenta */
+  --admin-dark: #1E1F29;
+  --admin-dark-hover: #15161D;
+  --admin-bg: #F4F4F4;
+  --admin-border: #E4E7ED;
+  --admin-text: #333333;
+  --admin-sidebar-width: 250px;
+}
+
+/* ================== LAYOUT ================== */
+.admin-wrapper {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--admin-bg);
+  font-family: 'Montserrat', sans-serif;
+  color: var(--admin-text);
+}
+
+/* ================== SIDEBAR ================== */
+.admin-sidebar {
+  width: var(--admin-sidebar-width);
+  background-color: var(--admin-dark);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+.admin-sidebar-header {
+  padding: 20px;
+  text-align: center;
+  border-bottom: 2px solid var(--admin-primary);
+  background-color: var(--admin-dark-hover);
+}
+
+.admin-sidebar-header h2 {
+  color: #fff;
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.admin-sidebar-header h2 span {
+  color: var(--admin-primary);
+}
+
+.admin-nav {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+}
+
+.admin-nav li {
+  margin-bottom: 5px;
+}
+
+.admin-nav a {
+  display: block;
+  padding: 15px 20px;
+  color: #B9BABC;
+  text-decoration: none;
+  font-weight: 500;
+  border-left: 3px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.admin-nav a i {
+  margin-right: 10px;
+  width: 20px;
+  text-align: center;
+}
+
+.admin-nav a:hover,
+.admin-nav a.active {
+  color: var(--admin-primary);
+  background-color: rgba(192, 38, 211, 0.05); /* Light Magenta */
+  border-left-color: var(--admin-primary);
+}
+
+/* ================== MAIN CONTENT ================== */
+.admin-main {
+  flex-grow: 1;
+  margin-left: var(--admin-sidebar-width);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ================== HEADER ================== */
+.admin-header {
+  height: 70px;
+  background-color: #fff;
+  border-bottom: 1px solid var(--admin-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+}
+
+.admin-header .page-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.admin-user-menu {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.admin-avatar {
+  background-color: var(--admin-primary);
+  color: #fff;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+/* ================== PAGE CONTENT ================== */
+.admin-content {
+  padding: 30px;
+  overflow-y: auto;
+}
+
+/* ================== CARDS & WIDGETS ================== */
+.admin-card {
+  background-color: #fff;
+  border-radius: 6px;
+  border: 1px solid var(--admin-border);
+  padding: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+}
+
+.stat-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: rgba(192, 38, 211, 0.1);
+  color: var(--admin-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin-right: 20px;
+}
+
+.stat-details h3 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--admin-dark);
+}
+
+.stat-details span {
+  color: #8D99AE;
+  font-size: 14px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* ================== TABLES ================== */
+.admin-table-container {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 15px;
+  text-align: left;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-table th {
+  background-color: #f9f9f9;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 13px;
+  color: #8D99AE;
+}
+
+.admin-table tbody tr:hover {
+  background-color: #fcfcfc;
+}
+
+.badge-success {
+  background-color: #28a745;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.badge-danger {
+  background-color: #D10024;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* ================== UTILITIES ================== */
+.action-btn {
+  background: none;
+  border: none;
+  color: #8D99AE;
+  cursor: pointer;
+  margin-right: 10px;
+  font-size: 16px;
+  transition: color 0.2s;
+}
+
+.action-btn:hover.edit {
+  color: var(--admin-primary);
+}
+
+.action-btn:hover.delete {
+  color: #D10024;
+}
+
+.form-group-admin label {
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.admin-upload-box {
+  border: 2px dashed var(--admin-border);
+  padding: 40px;
+  text-align: center;
+  border-radius: 6px;
+  color: #8D99AE;
+  background-color: #f9f9f9;
+  cursor: pointer;
+}
+
+.admin-upload-box:hover {
+  border-color: var(--admin-primary);
+  color: var(--admin-primary);
+}
+
+/* ================== DRAWER COMPONENT ================== */
+.admin-drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 1040;
+  backdrop-filter: blur(2px);
+  transition: opacity 0.3s ease;
+}
+
+.admin-drawer {
+  position: fixed;
+  top: 0;
+  right: -500px; /* Vị trí mặc định là ẩn ngoài màn hình */
+  width: 450px;
+  height: 100vh;
+  background-color: #fff;
+  z-index: 1050;
+  box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+  transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-drawer.open {
+  right: 0;
+}
+
+.admin-drawer-header {
+  padding: 20px 25px;
+  border-bottom: 1px solid #eaeaea;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-drawer-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.admin-drawer-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #8D99AE;
+  cursor: pointer;
+}
+
+.admin-drawer-body {
+  padding: 25px;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.admin-drawer-footer {
+  padding: 20px 25px;
+  border-top: 1px solid #eaeaea;
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+}

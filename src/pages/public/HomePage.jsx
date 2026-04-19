@@ -1,7 +1,8 @@
 import React from "react";
 import ProductCard from "../../components/common/ProductCard";
 
-
+// TODO (Backend): Gọi API GET /api/v1/products?sort=newest và GET /api/v1/products?sort=top_selling
+// Sử dụng Axios trong useEffect để lấy List<ProductResponseDTO> và truyền xuống ProductCard
 export default function HomePage() {
   const newProducts = [
     { id: 1, imageUrl: "/img/product01.png" },
@@ -64,6 +65,7 @@ export default function HomePage() {
 
             <div className="col-md-12">
               <div className="row">
+                {/* // TODO (Backend): Gọi API GET /api/v1/products?sort=newest - Module Catalog */}
                 {newProducts.map(p => (
                   <div key={p.id} className="col-md-3 col-xs-6">
                     <ProductCard id={p.id} imageUrl={p.imageUrl} />
@@ -103,6 +105,7 @@ export default function HomePage() {
             </div>
             <div className="col-md-12">
               <div className="row">
+                {/* // TODO (Backend): Gọi API GET /api/v1/products?sort=top_selling - Module Catalog */}
                 {topSelling.map(p => (
                   <div key={p.id} className="col-md-3 col-xs-6">
                     <ProductCard id={p.id} imageUrl={p.imageUrl} />

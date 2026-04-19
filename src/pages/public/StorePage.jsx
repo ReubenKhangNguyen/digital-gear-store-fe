@@ -4,9 +4,11 @@ import ProductCard from "../../components/common/ProductCard";
 // Import service gọi API Spring Boot
 import categoryService from "../../services/categoryService"; 
 import brandService from "../../services/brandService"; 
-import productService from "../../services/productService"; 
+import productService from "../../services/productService"; // THÊM MỚI: Import Product Service
 
-
+// =========================================================
+// HÀM ĐỆ QUY: CÂY BỘ LỌC DANH MỤC CẤP N 
+// =========================================================
 const SidebarCategoryItem = ({ category, selectedIds, onToggleCheck }) => {
   const [isOpen, setIsOpen] = useState(false);
   const hasChildren = category.categoryChild && category.categoryChild.length > 0;
@@ -15,6 +17,7 @@ const SidebarCategoryItem = ({ category, selectedIds, onToggleCheck }) => {
     <div style={{ marginLeft: '15px', marginTop: '10px' }}>
       <div style={{ display: 'flex', alignItems: 'center' }}>
         
+        {/* Nút bấm Mở/Đóng nhánh */}
         {hasChildren ? (
           <i 
             className={`fa ${isOpen ? 'fa-minus-square-o' : 'fa-plus-square-o'}`} 
@@ -31,6 +34,7 @@ const SidebarCategoryItem = ({ category, selectedIds, onToggleCheck }) => {
           <span style={{ width: '22px', marginRight: '10px' }}></span> 
         )}
 
+        {/* Ô Checkbox */}
         <div className="input-checkbox" style={{ margin: 0, display: 'flex', alignItems: 'center' }}>
           <input 
             type="checkbox" 
@@ -65,22 +69,29 @@ const SidebarCategoryItem = ({ category, selectedIds, onToggleCheck }) => {
   );
 };
 
-
+// =========================================================
+// MAIN COMPONENT: STORE PAGE
+// =========================================================
 export default function StorePage() {
+  // STATE QUẢN LÝ DANH MỤC (Giữ nguyên)
   const [categoriesTree, setCategoriesTree] = useState([]);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
 
+  // STATE QUẢN LÝ THƯƠNG HIỆU (Giữ nguyên)
   const [brands, setBrands] = useState([]);
   const [selectedBrandIds, setSelectedBrandIds] = useState([]);
 
+  // THÊM MỚI: STATE QUẢN LÝ SẢN PHẨM
   const [products, setProducts] = useState([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
 
+  // FETCH DỮ LIỆU TỪ SPRING BOOT (Cây Danh Mục & Brand)
   useEffect(() => {
     const fetchTree = async () => {
       try {
         const response = await categoryService.getCategoryTree();
-        setCategoriesTree(response.data ? response.data : response);
+        const data = response.result || response;
+        setCategoriesTree(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Lỗi lấy danh mục:", error);
       }
@@ -89,7 +100,8 @@ export default function StorePage() {
     const fetchBrands = async () => {
       try {
         const response = await brandService.getAllBrands();
-        setBrands(response.data ? response.data : response);
+        const data = response.result || response;
+        setBrands(Array.isArray(data) ? data : []);
       } catch (error) {
         console.error("Lỗi lấy thương hiệu:", error);
       }
@@ -99,6 +111,7 @@ export default function StorePage() {
     fetchBrands();
   }, []);
 
+  // XỬ LÝ SỰ KIỆN CHỌN CHECKBOX (Giữ nguyên)
   const handleToggleCheck = (categoryId) => {
     setSelectedCategoryIds((prevIds) => {
       if (prevIds.includes(categoryId)) {
@@ -119,6 +132,7 @@ export default function StorePage() {
     });
   };
 
+  // THÊM MỚI: Gọi API Lấy Sản Phẩm khi Filter thay đổi
   useEffect(() => {
     const fetchProducts = async () => {
       setIsLoadingProducts(true);
@@ -127,9 +141,9 @@ export default function StorePage() {
         if (selectedCategoryIds.length > 0) params.categoryIds = selectedCategoryIds.join(',');
         if (selectedBrandIds.length > 0) params.brandIds = selectedBrandIds.join(',');
 
-        const response = await productService.getProducts(params);
-        const productData = response.data ? response.data : response;
-        setProducts(productData);
+        const response = await productService.getAllProducts(params);
+        const productData = response.result || response;
+        setProducts(Array.isArray(productData) ? productData : []);
       } catch (error) {
         console.error("Lỗi lấy sản phẩm:", error);
       } finally {
@@ -162,6 +176,7 @@ export default function StorePage() {
           <div className="row">
             <div id="aside" className="col-md-3">
               
+              {/* CATEGORIES */}
               <div className="aside">
                 <h3 className="aside-title">Categories</h3>
                 <div className="checkbox-filter" style={{ marginLeft: '-15px' }}>
@@ -180,6 +195,7 @@ export default function StorePage() {
                 </div>
               </div>
 
+              {/* PHẦN TĨNH: PRICE */}
               <div className="aside">
                 <h3 className="aside-title">Price</h3>
                 <div className="price-filter">
@@ -190,6 +206,7 @@ export default function StorePage() {
                 </div>
               </div>
 
+              {/* BRAND */}
               <div className="aside">
                 <h3 className="aside-title">Brand</h3>
                 <div className="checkbox-filter">
@@ -214,6 +231,7 @@ export default function StorePage() {
                 </div>
               </div>
 
+              {/* PHẦN TĨNH: TOP SELLING */}
               <div className="aside">
                 <h3 className="aside-title">Top selling</h3>
                 <div className="product-widget">
@@ -236,6 +254,7 @@ export default function StorePage() {
                 <ul className="store-grid"><li className="active"><i className="fa fa-th"></i></li><li><a href="#"><i className="fa fa-th-list"></i></a></li></ul>
               </div>
 
+              {/* THAY ĐỔI: ĐỔ DỮ LIỆU ĐỘNG VÀO LƯỚI SẢN PHẨM */}
               <div className="row">
                 {isLoadingProducts ? (
                   <div className="col-md-12 text-center"><p>Đang tải sản phẩm...</p></div>

@@ -4,7 +4,7 @@ import axiosClient from '../utils/axiosClient';
 const productService = {
   // Lấy danh sách sản phẩm (có thể kèm theo các filter như categoryId, brandId...)
   // TODO (Backend): Cập nhật endpoint cho khớp với Controller của em
-  getProducts: (params) => {
+  getAllProducts: (params) => {
     return axiosClient.get('/products', { params }); 
   },
   

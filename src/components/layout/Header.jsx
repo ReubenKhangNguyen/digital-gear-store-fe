@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from "react";
-import categoryService from "../../services/categoryService"; 
+import React, { useEffect, useState, useContext } from "react";
+import categoryService from "../../services/categoryService";
+import { AuthContext } from "../../context/AuthContext";
+
 
 // =========================================================
 // HÀM TẠO MENU (KHÓA ĐỆ QUY TỐI ĐA 2 CẤP)
@@ -12,18 +14,18 @@ const MenuItem = ({ category, depth = 1 }) => {
 
   return (
     <li className={showDropdown ? "dropdown" : ""}>
-      <a 
-        href={`/store?categoryId=${category.id}`} 
-        className={showDropdown ? "dropdown-toggle" : ""} 
+      <a
+        href={`/store?categoryId=${category.id}`}
+        className={showDropdown ? "dropdown-toggle" : ""}
         data-toggle={showDropdown ? "dropdown" : ""}
         aria-expanded="false"
       >
-        {category.name} 
-        
+        {category.name}
+
         {/* CHỈ hiện mũi tên nếu là danh mục Cấp 1 có chứa menu con */}
-        {showDropdown && <i className="fa fa-angle-down" style={{marginLeft: '5px'}}></i>}
+        {showDropdown && <i className="fa fa-angle-down" style={{ marginLeft: '5px' }}></i>}
       </a>
-      
+
       {/* NẾU đủ điều kiện (Cấp 1 có con), thì mới render menu Cấp 2 */}
       {showDropdown && (
         <ul className="dropdown-menu" style={{ minWidth: '200px', backgroundColor: '#fff', border: '1px solid #ddd', padding: '10px 0' }}>
@@ -42,16 +44,17 @@ const MenuItem = ({ category, depth = 1 }) => {
 // =========================================================
 export default function Header() {
   const [categories, setCategories] = useState([]);
+  const { isAuthenticated, user, logout } = useContext(AuthContext);
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const response = await categoryService.getCategoryTree();
-        const categoryData = response.data ? response.data : response;
-        setCategories(categoryData);
+        const categoryData = response.result || response;
+        setCategories(Array.isArray(categoryData) ? categoryData : []);
       } catch (error) {
         console.error("Lỗi tải danh mục:", error);
-        
+
         // --- FALLBACK MOCK DATA (Phòng khi Backend chết, UI vẫn có cái để xem) ---
         // setCategories([...cục JSON em vừa đưa anh copy vào đây...]);
       }
@@ -70,7 +73,17 @@ export default function Header() {
               <li><a href="#"><i className="fa fa-envelope-o"></i> email@email.com</a></li>
             </ul>
             <ul className="header-links pull-right">
-              <li><a href="#"><i className="fa fa-user-o"></i> My Account</a></li>
+              {isAuthenticated ? (
+                <>
+                  <li><a href="#"><i className="fa fa-user-o"></i>{user?.fullName}</a></li>
+                  <li><a href="#" onClick={(e) => { e.preventDefault(); logout(); }}><i className="fa fa-sign-out"></i> Đăng xuất</a></li>
+                </>
+              ) : (
+                <>
+                  <li><a href="/login"><i className="fa fa-user-o"></i> Đăng nhập</a></li>
+                  <li><a href="/register"><i className="fa fa-user-plus"></i> Đăng ký</a></li>
+                </>
+              )}
             </ul>
           </div>
         </div>
@@ -84,7 +97,7 @@ export default function Header() {
                 </div>
               </div>
 
-                <div className="col-md-6">
+              <div className="col-md-6">
                 <div className="header-search">
                   <form>
                     {/* TODO (Backend - Module Catalog): Tích hợp API Danh mục
@@ -96,7 +109,7 @@ export default function Header() {
                       <option value="1">Category 01</option>
                       <option value="1">Category 02</option>
                     </select>
-                    
+
                     {/* TODO (Backend - Module Catalog): Tích hợp Thanh tìm kiếm thông minh
                         - Bắt sự kiện onChange của input này.
                         - Áp dụng kỹ thuật Debounce (đợi 500ms sau khi ngừng gõ) rồi mới gọi API:
@@ -111,7 +124,7 @@ export default function Header() {
 
               <div className="col-md-3 clearfix">
                 <div className="header-ctn">
-                  
+
                   {/* TODO (Backend - Module Recommendation): Cải tạo thành Gợi ý thông minh
                       - Đổi icon fa-heart-o thành tia sét (fa-magic hoặc fa-bolt).
                       - Đổi chữ "Your Wishlist" thành "Gợi ý cho bạn".
@@ -136,7 +149,7 @@ export default function Header() {
                       */}
                       <div className="qty">3</div>
                     </a>
-                    
+
                     {/* TODO (Backend - Module Order): Chi tiết giỏ hàng thu nhỏ
                         - Khi hover/click mở dropdown này, dùng .map() duyệt qua mảng cart.items để render các <div className="product-widget">.
                         - Lấy hình ảnh (ProductImage), tên (ProductName), giá (Price) và số lượng (Quantity) đổ vào đây.
@@ -181,18 +194,18 @@ export default function Header() {
       </header>
 
 
-{/* THANH MENU ĐỘNG LẤY TỪ SPRING BOOT */}
+      {/* THANH MENU ĐỘNG LẤY TỪ SPRING BOOT */}
       <nav id="navigation">
         <div className="container">
           <div id="responsive-nav">
             <ul className="main-nav nav navbar-nav">
               <li className="active"><a href="/">Trang chủ</a></li>
-              
+
               {/* Truyền dữ liệu vào Hàm đệ quy */}
               {categories.map((cat) => (
                 <MenuItem key={cat.id} category={cat} />
               ))}
-              
+
             </ul>
           </div>
         </div>
