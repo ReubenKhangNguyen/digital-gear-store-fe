@@ -1,7 +1,7 @@
 import axiosClient from '../utils/axiosClient';
 
 // -----------------------------------------------------------------------------
-// KHỐI GIAO TIẾP API XÁC THỰC (AUTHENTICATION)
+// GIAO TIẾP API XÁC THỰC (AUTHENTICATION)
 // Chứa mã gọi Data trực tiếp xuống các Controller bên Spring Boot
 // -----------------------------------------------------------------------------
 const authService = {
@@ -19,6 +19,16 @@ const authService = {
   // Kiểm tra token có hợp lệ không (Gọi xuống AuthenticationController.java)
   introspect: (token) => {
     return axiosClient.post('/auth/introspect', { token });
+  },
+
+  // Quên mật khẩu - Yêu cầu gửi OTP
+  forgotPassword: (email) => {
+    return axiosClient.post('/auth/forgot-password', { email });
+  },
+
+  // Đổi mật khẩu mới với OTP
+  resetPassword: (email, otpCode, newPassword) => {
+    return axiosClient.post('/auth/reset-password', { email, otpCode, newPassword });
   }
 };
 

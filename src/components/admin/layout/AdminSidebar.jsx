@@ -5,7 +5,7 @@ export default function AdminSidebar() {
   return (
     <aside className="admin-sidebar">
       <div className="admin-sidebar-header">
-        <h2>Digital<span>Admin</span></h2>
+        <a href="/" className="logo"><h2>Digital<span>Admin</span></h2></a>
       </div>
       <ul className="admin-nav">
         <li>
@@ -30,12 +30,12 @@ export default function AdminSidebar() {
         </li>
         <li>
           <NavLink to="/admin/orders" className={({ isActive }) => isActive ? "active" : ""}>
-            <i className="fa fa-shopping-cart"></i> Đơn hàng (Demo)
+            <i className="fa fa-shopping-cart"></i> Quản lý Đơn hàng
           </NavLink>
         </li>
         <li>
           <NavLink to="/admin/users" className={({ isActive }) => isActive ? "active" : ""}>
-            <i className="fa fa-users"></i> Người dùng (Demo)
+            <i className="fa fa-users"></i> Quản lý Người dùng
           </NavLink>
         </li>
       </ul>

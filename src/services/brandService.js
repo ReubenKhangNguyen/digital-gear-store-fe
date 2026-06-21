@@ -6,6 +6,15 @@ const brandService = {
   },
   getBrandById: (id) => {
     return axiosClient.get(`/brands/${id}`);
+  },
+  createBrand: (data) => {
+    return axiosClient.post('/brands', data);
+  },
+  updateBrand: (id, data) => {
+    return axiosClient.put(`/brands/${id}`, data);
+  },
+  deleteBrand: (id) => {
+    return axiosClient.delete(`/brands/${id}`);
   }
 };
 

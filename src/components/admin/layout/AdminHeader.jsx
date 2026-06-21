@@ -19,7 +19,11 @@ export default function AdminHeader() {
           {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'A'}
         </div>
         <div>
-          <span style={{ fontWeight: '600', display: 'block', fontSize: '14px' }}>
+          <span 
+            style={{ fontWeight: '600', display: 'block', fontSize: '14px', cursor: 'pointer' }} 
+            onClick={() => navigate('/profile')}
+            title="Đi tới trang cá nhân"
+          >
             {user?.fullName || 'Administrator'}
           </span>
           <span style={{ fontSize: '12px', color: '#8D99AE', cursor: 'pointer' }} onClick={handleLogout}>

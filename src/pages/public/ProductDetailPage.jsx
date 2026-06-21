@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { useParams } from "react-router-dom";
 import ProductCard from "../../components/common/ProductCard";
+import { CartContext } from "../../context/CartContext";
 import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 
@@ -94,6 +95,7 @@ export default function ProductDetailPage() {
   // --- STATE QUẢN LÝ DỮ LIỆU ---
   const [isLoading, setIsLoading] = useState(true);
   const [product, setProduct] = useState(null);
+  const { addToCart } = useContext(CartContext);
   
   // Các state tĩnh giữ lại cho sau này
   const [reviews] = useState([]);
@@ -138,13 +140,7 @@ export default function ProductDetailPage() {
   };
 
   const handleAddToCart = () => {
-    const payload = {
-      productId: product.id,
-      quantity: quantity,
-      options: { size: selectedSize, color: selectedColor } // Tạm thời gửi options tĩnh
-    };
-    console.log("Dữ liệu chuẩn bị gửi xuống Spring Boot:", payload);
-    alert(`Đã thêm ${quantity} ${product.name} vào giỏ!`);
+    addToCart(product.id, quantity);
   };
 
   if (isLoading) return <div className="text-center" style={{ padding: '100px' }}><h3>Đang tải dữ liệu sản phẩm...</h3></div>;
@@ -183,11 +179,22 @@ export default function ProductDetailPage() {
                   prevArrow={<MainPrev />}
                   nextArrow={<MainNext />}
                 >
-                  {product.images?.map((img) => (
-                    <div className="product-preview" key={img.id}>
-                      <img src={img.imageUrl} alt={product.name} style={{ width: "100%", height: '400px', objectFit: "contain", transition: "transform .3s ease" }} />
+                  {(!product.images || product.images.length === 0) ? (
+                    <div className="product-preview">
+                      <img src="https://placehold.co/400x400/f8f9fa/adb5bd?text=No+Image" alt="No image" style={{ width: "100%", height: '400px', objectFit: "contain" }} />
                     </div>
-                  ))}
+                  ) : (
+                    product.images.map((img) => (
+                      <div className="product-preview" key={img.id}>
+                        <img 
+                          src={img.imageUrl || "https://placehold.co/400x400/f8f9fa/adb5bd?text=No+Image"} 
+                          alt={product.name} 
+                          style={{ width: "100%", height: '400px', objectFit: "contain", transition: "transform .3s ease" }} 
+                          onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x400/f8f9fa/adb5bd?text=No+Image"; }}
+                        />
+                      </div>
+                    ))
+                  )}
                 </Slick>
               </div>
             </div>
@@ -206,11 +213,22 @@ export default function ProductDetailPage() {
                   prevArrow={<ThumbPrev />}
                   nextArrow={<ThumbNext />}
                 >
-                  {product.images?.map((img) => (
-                    <div className="product-preview" key={`thumb-${img.id}`}>
-                      <img src={img.imageUrl} alt="thumb" style={{ width: "100%", height: '100px', objectFit: 'cover', cursor: "pointer" }} />
+                  {(!product.images || product.images.length === 0) ? (
+                    <div className="product-preview">
+                      <img src="https://placehold.co/100x100/f8f9fa/adb5bd?text=No+Image" alt="thumb" style={{ width: "100%", height: '100px', objectFit: 'cover' }} />
                     </div>
-                  ))}
+                  ) : (
+                    product.images.map((img) => (
+                      <div className="product-preview" key={`thumb-${img.id}`}>
+                        <img 
+                          src={img.imageUrl || "https://placehold.co/100x100/f8f9fa/adb5bd?text=No+Image"} 
+                          alt="thumb" 
+                          style={{ width: "100%", height: '100px', objectFit: 'cover', cursor: "pointer" }} 
+                          onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/100x100/f8f9fa/adb5bd?text=No+Image"; }}
+                        />
+                      </div>
+                    ))
+                  )}
                 </Slick>
               </div>
             </div>
@@ -225,12 +243,17 @@ export default function ProductDetailPage() {
                     {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
                   </h3>
                   {/* Trạng thái tồn kho động */}
-                  <span className="product-available" style={{ color: product.stockQuantity > 0 ? '#D10024' : '#999' }}>
-                    {product.stockQuantity > 0 ? "IN STOCK" : "OUT OF STOCK"}
+                  <span className="product-available" style={{ color: product.stockQuantity > 0 ? '#0bc336' : '#999', fontSize: '18px', fontưWeight: '800' }}>
+                    {product.stockQuantity > 0 ? "CÒN HÀNG" : "HẾT HÀNG"}
                   </span>
                 </div>
 
                 <p>{product.brand?.description}</p>
+
+                <div className="product-options">
+                  <p>Stock Quantity: {product.stockQuantity}</p>
+                </div>
+                
 
                 {/* FORM CHỌN BIẾN THỂ (Variants) */}
                 <div className="product-options">

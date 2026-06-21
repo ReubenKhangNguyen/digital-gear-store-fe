@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Select from 'react-select';
 import brandService from '../../services/brandService';
 import categoryService from '../../services/categoryService';
@@ -31,8 +31,9 @@ const SPEC_TEMPLATES = {
   ]
 };
 
-export default function CreateProductPage() {
+export default function UpdateProductPage() {
   const navigate = useNavigate();
+  const { id } = useParams();
 
   // --- 1. STATE CHUNG ---
   const [formData, setFormData] = useState({
@@ -78,6 +79,48 @@ export default function CreateProductPage() {
         const catRes = await categoryService.getCategoryTree();
         const catData = catRes.result || catRes;
         setCategoriesTree(catData);
+
+        // Fetch Product Data for Update
+        const prodRes = await productService.getProductById(id);
+        const product = prodRes.result || prodRes;
+
+        setFormData({
+          name: product.name || '',
+          sku: product.sku || '',
+          price: product.price != null ? product.price.toString() : '',
+          stockQuantity: product.stockQuantity != null ? product.stockQuantity.toString() : '',
+          brandId: product.brand?.id || null
+        });
+
+        if (product.images) {
+          setImages(product.images.map(img => ({ ...img, id: img.id || Date.now() + Math.random() })));
+        }
+
+        // Find Category Path
+        let foundPath = [];
+        const findPath = (nodes, targetId, currentPath) => {
+          for (let node of nodes) {
+            const path = [...currentPath, node.id.toString()];
+            if (node.id === targetId) {
+              foundPath = path;
+              return true;
+            }
+            if (node.categoryChild && findPath(node.categoryChild, targetId, path)) {
+              return true;
+            }
+          }
+          return false;
+        };
+        findPath(catData, product.category?.id, []);
+        if (foundPath.length >= 1) setCatLevel1(foundPath[0]);
+        if (foundPath.length >= 2) setCatLevel2(foundPath[1]);
+        if (foundPath.length >= 3) setCatLevel3(foundPath[2]);
+
+        if (product.specifications) {
+          const customs = Object.entries(product.specifications).map(([k, v]) => ({ key: k, value: v }));
+          setCustomSpecs(customs);
+        }
+
       } catch (err) {
         console.error("Fetch form data error", err);
       }
@@ -201,7 +244,7 @@ export default function CreateProductPage() {
         return { imageUrl: img.imageUrl, isThumbnail: img.isThumbnail };
       });
 
-      // BƯỚC 2: TẠO SẢN PHẨM
+      // BƯỚC 2: CẬP NHẬT SẢN PHẨM
       const payload = {
         name: formData.name,
         sku: formData.sku,
@@ -210,15 +253,16 @@ export default function CreateProductPage() {
         categoryId: parseInt(finalCategoryId),
         brandId: parseInt(formData.brandId),
         images: finalImages,
+        status: 'ACTIVE',
         specifications: mergedSpecs
       };
 
-      await productService.createProduct(payload);
-      alert("Tạo Sản phẩm thành công!");
+      await productService.updateProduct(id, payload);
+      alert("Cập nhật Sản phẩm thành công!");
       navigate('/admin/products');
     } catch (error) {
-      console.error("Lỗi khi tạo sản phẩm:", error);
-      alert(error.response?.data?.message || 'Có lỗi xảy ra khi tạo sản phẩm!');
+      console.error("Lỗi khi cập nhật sản phẩm:", error);
+      alert(error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật!');
     } finally {
       setIsPublishing(false);
     }
@@ -228,7 +272,7 @@ export default function CreateProductPage() {
     <div style={{ paddingBottom: '100px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
         <div>
-          <h2 style={{ fontSize: '24px', fontWeight: 'bold' }}>Create New Product</h2>
+          <h2 style={{ fontSize: '24px', fontWeight: 'bold' }}>Update Product #{id}</h2>
           <p style={{ color: '#8D99AE' }}>Back to inventory <a href="#" onClick={(e) => { e.preventDefault(); navigate('/admin/products'); }} style={{ color: '#C026D3' }}>Products List</a></p>
         </div>
         <div>
@@ -236,7 +280,7 @@ export default function CreateProductPage() {
             Cancel
           </button>
           <button className="primary-btn" onClick={handlePublish} disabled={isPublishing}>
-            {isPublishing ? 'Đang Upload & Lưu...' : 'Publish Product'}
+            {isPublishing ? 'Đang Upload & Lưu...' : 'Update Product'}
           </button>
         </div>
       </div>
@@ -346,6 +390,7 @@ export default function CreateProductPage() {
                 isSearchable 
                 placeholder="Tìm và chọn..." 
                 onChange={(opt) => setFormData({...formData, brandId: opt?.value})}
+                value={brandOptions.find(o => o.value === formData.brandId) || null}
               />
             </div>
 

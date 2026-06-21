@@ -15,6 +15,7 @@ export default function BrandListPage() {
   const [brands, setBrands] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [editingBrand, setEditingBrand] = useState(null);
 
   // Setup React Hook Form
   const { register, handleSubmit, formState: { errors }, reset, watch } = useForm({
@@ -40,7 +41,18 @@ export default function BrandListPage() {
   };
 
   const openDrawer = () => {
-    reset(); // Xóa sạch input rác của lần trước
+    reset({ name: '', description: '', logo: '' });
+    setEditingBrand(null);
+    setIsDrawerOpen(true);
+  };
+
+  const handleEdit = (brand) => {
+    reset({
+      name: brand.name,
+      description: brand.description || '',
+      logo: brand.logo || ''
+    });
+    setEditingBrand(brand);
     setIsDrawerOpen(true);
   };
 
@@ -49,14 +61,34 @@ export default function BrandListPage() {
   };
 
   const onSubmit = async (data) => {
-    console.log("Submit Create Brand:", data);
-    // TODO: Tích hợp API tạo Brand thực tế ở đây
-    // vd: await brandService.createBrand(data);
-    
-    // Tạm giả lập thành công
-    alert('Thêm Brand thành công! Hãy xem Console để check Data.');
-    closeDrawer();
-    fetchBrands();
+    try {
+      if (editingBrand) {
+        // Gắn thêm status cũ vào vì Backend yêu cầu
+        await brandService.updateBrand(editingBrand.id, { ...data, status: editingBrand.status });
+        alert('Cập nhật Thương hiệu thành công!');
+      } else {
+        await brandService.createBrand(data);
+        alert('Thêm Thương hiệu thành công!');
+      }
+      closeDrawer();
+      fetchBrands();
+    } catch (error) {
+      console.error("Lỗi khi lưu Brand:", error);
+      alert(error.response?.data?.message || 'Có lỗi xảy ra!');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa Thương hiệu này?')) {
+      try {
+        await brandService.deleteBrand(id);
+        alert('Xóa Thương hiệu thành công!');
+        fetchBrands();
+      } catch (error) {
+        console.error("Lỗi khi xóa Brand:", error);
+        alert(error.response?.data?.message || 'Có lỗi xảy ra khi xóa!');
+      }
+    }
   };
 
   return (
@@ -109,8 +141,8 @@ export default function BrandListPage() {
                       {brand.status === 'INACTIVE' && <span className="badge-danger" style={{backgroundColor: '#f39c12'}}>Inactive</span>}
                     </td>
                     <td>
-                      <button className="action-btn edit" title="Edit"><i className="fa fa-edit"></i></button>
-                      <button className="action-btn delete" title="Delete"><i className="fa fa-trash"></i></button>
+                      <button className="action-btn edit" title="Edit" onClick={() => handleEdit(brand)}><i className="fa fa-edit"></i></button>
+                      <button className="action-btn delete" title="Delete" onClick={() => handleDelete(brand.id)}><i className="fa fa-trash"></i></button>
                     </td>
                   </tr>
                 ))}
@@ -131,7 +163,7 @@ export default function BrandListPage() {
       )}
       <div className={`admin-drawer ${isDrawerOpen ? 'open' : ''}`}>
         <div className="admin-drawer-header">
-          <h3>Thêm Thương hiệu Mới</h3>
+          <h3>{editingBrand ? 'Cập nhật Thương hiệu' : 'Thêm Thương hiệu Mới'}</h3>
           <button className="admin-drawer-close" onClick={closeDrawer}><i className="fa fa-times"></i></button>
         </div>
         

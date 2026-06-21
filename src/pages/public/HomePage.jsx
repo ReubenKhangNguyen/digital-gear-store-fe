@@ -20,35 +20,18 @@ export default function HomePage() {
 
   return (
     <>
-      <div className="section">
+      <div id="hero-banner" className="section">
         <div className="container">
           <div className="row">
-            <div className="col-md-4 col-xs-6">
-              <div className="shop">
-                <div className="shop-img"><img src="/img/shop01.png" alt="" /></div>
-                <div className="shop-body">
-                  <h3>Laptop<br/>Collection</h3>
-                  <a href="#" className="cta-btn">Shop now <i className="fa fa-arrow-circle-right"></i></a>
+            <div className="col-md-12">
+              <div className="hero-flex-layout">
+                <div className="hero-content">
+                  <h1>Trải Nghiệm<br />Công Nghệ Thế Hệ Mới</h1>
+                  <p>Khám phá bộ sưu tập laptop, điện thoại và máy ảnh chuyên nghiệp mới nhất. Nâng tầm phong cách sống của bạn ngay hôm nay.</p>
+                  <a href="#" className="btn-premium">Mua Sắm Ngay</a>
                 </div>
-              </div>
-            </div>
-
-            <div className="col-md-4 col-xs-6">
-              <div className="shop">
-                <div className="shop-img"><img src="/img/shop03.png" alt="" /></div>
-                <div className="shop-body">
-                  <h3>Accessories<br/>Collection</h3>
-                  <a href="#" className="cta-btn">Shop now <i className="fa fa-arrow-circle-right"></i></a>
-                </div>
-              </div>
-            </div>
-
-            <div className="col-md-4 col-xs-6">
-              <div className="shop">
-                <div className="shop-img"><img src="/img/shop02.png" alt="" /></div>
-                <div className="shop-body">
-                  <h3>Cameras<br/>Collection</h3>
-                  <a href="#" className="cta-btn">Shop now <i className="fa fa-arrow-circle-right"></i></a>
+                <div className="hero-image">
+                  <img src="/img/product01.png" alt="Premium Headphone" />
                 </div>
               </div>
             </div>

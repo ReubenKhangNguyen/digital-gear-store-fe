@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import userService from '../../services/userService';
+import { toast } from 'react-toastify';
+import { AuthContext } from '../../context/AuthContext';
 
 export default function UserListPage() {
+  const { user: currentUser } = React.useContext(AuthContext);
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -20,6 +23,21 @@ export default function UserListPage() {
     };
     fetchUsers();
   }, []);
+
+  const handleToggleStatus = async (user) => {
+    const actionText = user.isActive ? 'khóa' : 'mở khóa';
+    if (!window.confirm(`Bạn có chắc chắn muốn ${actionText} tài khoản @${user.username} không?`)) return;
+
+    try {
+      const response = await userService.updateUserStatus(user.id, !user.isActive);
+      toast.success(response.result || `Đã ${actionText} tài khoản thành công!`);
+      // Update local state
+      setUsers(users.map(u => u.id === user.id ? { ...u, isActive: !user.isActive } : u));
+    } catch (error) {
+      console.error(`Lỗi ${actionText} tài khoản:`, error);
+      toast.error(error.response?.data?.message || `Thao tác thất bại!`);
+    }
+  };
 
   return (
     <div>
@@ -62,8 +80,20 @@ export default function UserListPage() {
                       </span>
                     </td>
                     <td>
-                      <button className="action-btn edit" title="Chi tiết"><i className="fa fa-eye"></i></button>
-                      <button className="action-btn delete" title="Khóa TK"><i className="fa fa-lock"></i></button>
+                      <button 
+                        className={`action-btn ${user.isActive ? 'delete' : 'edit'}`} 
+                        title={user.isActive ? 'Khóa TK' : 'Mở khóa'}
+                        onClick={() => handleToggleStatus(user)}
+                        disabled={currentUser?.id === user.id}
+                        style={{ 
+                          backgroundColor: user.isActive ? '#ffebee' : '#e8f5e9', 
+                          color: user.isActive ? '#D10024' : '#2e7d32',
+                          opacity: currentUser?.id === user.id ? 0.3 : 1,
+                          cursor: currentUser?.id === user.id ? 'not-allowed' : 'pointer'
+                        }}
+                      >
+                        <i className={`fa ${user.isActive ? 'fa-lock' : 'fa-unlock'}`}></i>
+                      </button>
                     </td>
                   </tr>
                 ))}

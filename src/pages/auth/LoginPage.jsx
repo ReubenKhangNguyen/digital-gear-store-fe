@@ -1,36 +1,52 @@
-import React, { useState, useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useContext, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import authService from '../../services/authService';
 import { AuthContext } from '../../context/AuthContext';
+import userService from '../../services/userService';
 
 export default function LoginPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
+  const [error, setError] = useState(location.state?.authError || '');
   const { login } = useContext(AuthContext);
+
+  // Clear error from history state so it doesn't persist on refresh
+  useEffect(() => {
+    if (location.state?.authError) {
+      navigate('/login', { replace: true, state: {} });
+    }
+  }, [location, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
-    
+
     try {
-       const response = await authService.login(username, password);
-       // Check cấu trúc ApiResponse: response.code === 1000 và có token
-       if (response && response.code === 1000 && response.result?.token) {
-          login(response.result.token, {
-             fullName: response.result.fullName
-          }); // Lưu token và info user qua Context
-          navigate('/'); // Chuyển hướng trang chủ
-       } else {
-          setError(response?.message || 'Đăng nhập thất bại.');
-       }
+      const response = await authService.login(username, password);
+      // Check cấu trúc ApiResponse: response.code === 1000 và có token
+      if (response && response.code === 1000 && response.result?.token) {
+        // Lưu token vào localStorage 
+        const newToken = response.result.token;
+        localStorage.setItem("accessToken", newToken);
+
+        // Lấy thông tin user từ API /users/myinfo để lưu vào Context
+        const userInfoResponse = await userService.getMyInfo();
+
+        // Cập nhật Context với token và thông tin user
+        login(newToken, userInfoResponse.result);
+
+        navigate('/'); // Chuyển hướng trang chủ
+      } else {
+        setError(response?.message || 'Đăng nhập thất bại.');
+      }
     } catch (err) {
-       if (err.response && err.response.data && err.response.data.message) {
-         setError(err.response.data.message); // Hiển thị lỗi từ server
-       } else {
-         setError('Tên đăng nhập hoặc mật khẩu không chính xác');
-       }
+      if (err.response && err.response.data && err.response.data.message) {
+        setError(err.response.data.message); // Hiển thị lỗi từ server
+      } else {
+        setError('Tên đăng nhập hoặc mật khẩu không chính xác');
+      }
     }
   };
 
@@ -38,7 +54,7 @@ export default function LoginPage() {
     <div style={styles.pageContainer}>
       <div className="container" style={styles.cardContainer}>
         <div className="row" style={{ margin: 0, display: 'flex', flexWrap: 'wrap', alignItems: 'center' }}>
-          
+
           {/* Cột trái: Hình ảnh minh họa */}
           <div className="col-md-6 hidden-xs hidden-sm" style={styles.leftCol}>
             <div style={styles.illustrationWrapper}>
@@ -48,10 +64,10 @@ export default function LoginPage() {
                 <i className="fa fa-user" style={styles.subIcon}></i>
               </div>
               {/* Trang trí xung quanh */}
-              <i className="fa fa-circle-o" style={{...styles.decoIcon, top: '20%', left: '10%', color: '#38bdf8'}}></i>
-              <i className="fa fa-play" style={{...styles.decoIcon, top: '30%', right: '10%', color: '#84cc16', transform: 'rotate(-30deg)'}}></i>
-              <i className="fa fa-caret-up" style={{...styles.decoIcon, bottom: '20%', left: '15%', color: '#84cc16', fontSize: '24px'}}></i>
-              <i className="fa fa-circle" style={{...styles.decoIcon, bottom: '15%', right: '20%', color: '#38bdf8', fontSize: '10px'}}></i>
+              <i className="fa fa-circle-o" style={{ ...styles.decoIcon, top: '20%', left: '10%', color: '#38bdf8' }}></i>
+              <i className="fa fa-play" style={{ ...styles.decoIcon, top: '30%', right: '10%', color: '#84cc16', transform: 'rotate(-30deg)' }}></i>
+              <i className="fa fa-caret-up" style={{ ...styles.decoIcon, bottom: '20%', left: '15%', color: '#84cc16', fontSize: '24px' }}></i>
+              <i className="fa fa-circle" style={{ ...styles.decoIcon, bottom: '15%', right: '20%', color: '#38bdf8', fontSize: '10px' }}></i>
             </div>
           </div>
 
@@ -59,15 +75,15 @@ export default function LoginPage() {
           <div className="col-md-6 col-xs-12" style={styles.rightCol}>
             <div style={styles.formContainer}>
               <h2 style={styles.title}>Member Login</h2>
-              
+
               <form onSubmit={handleLogin}>
                 {/* Input Tên đăng nhập */}
                 <div className="form-group" style={styles.inputGroup}>
                   <i className="fa fa-envelope" style={styles.inputIcon}></i>
-                  <input 
-                    type="text" 
-                    className="input" 
-                    placeholder="Username / Email" 
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="Username / Email"
                     style={styles.inputField}
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
@@ -78,10 +94,10 @@ export default function LoginPage() {
                 {/* Input Mật khẩu */}
                 <div className="form-group" style={styles.inputGroup}>
                   <i className="fa fa-lock" style={styles.inputIcon}></i>
-                  <input 
-                    type="password" 
-                    className="input" 
-                    placeholder="Password" 
+                  <input
+                    type="password"
+                    className="input"
+                    placeholder="Password"
                     style={styles.inputField}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -96,10 +112,27 @@ export default function LoginPage() {
                 <button type="submit" className="primary-btn" style={styles.submitBtn}>
                   LOGIN
                 </button>
+
+                {/* Dòng phân cách */}
+                <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0' }}>
+                  <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                  <span style={{ padding: '0 10px', color: '#8D99AE', fontSize: '12px' }}>OR</span>
+                  <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
+                </div>
+
+                {/* Nút Đăng nhập Google */}
+                <button 
+                  type="button" 
+                  onClick={() => window.location.href = "http://localhost:8080/api/v1/digital-store/oauth2/authorization/google"}
+                  style={{...styles.submitBtn, backgroundColor: '#fff', color: '#333', border: '1px solid #ccc', display: 'flex', alignItems: 'center', justifyContent: 'center'}}
+                >
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" style={{width: '18px', marginRight: '10px'}} />
+                  Sign in with Google
+                </button>
               </form>
 
               <div style={styles.forgotPassword}>
-                <a href="#" style={{ color: '#8D99AE', fontSize: '12px' }}>Forgot Username / Password?</a>
+                <Link to="/forgot-password" style={{ color: '#8D99AE', fontSize: '12px' }}>Forgot Username / Password?</Link>
               </div>
 
               <div style={styles.createAccount}>

@@ -17,6 +17,7 @@ export default function CategoryListPage() {
   const [expandedRows, setExpandedRows] = useState({});
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [editingId, setEditingId] = useState(null);
 
   // Setup React Hook Form
   const { register, handleSubmit, formState: { errors }, reset } = useForm({
@@ -57,7 +58,18 @@ export default function CategoryListPage() {
   const flatCategoryOptions = flattenCategoriesForSelect(categories || []);
 
   const openDrawer = () => {
-    reset(); // Xóa sạch rác
+    reset({ name: '', description: '', parentId: '' });
+    setEditingId(null);
+    setIsDrawerOpen(true);
+  };
+
+  const handleEdit = (category) => {
+    reset({
+      name: category.name,
+      description: category.description || '',
+      parentId: category.parentId ? category.parentId.toString() : ''
+    });
+    setEditingId(category.id);
     setIsDrawerOpen(true);
   };
 
@@ -73,12 +85,33 @@ export default function CategoryListPage() {
       parentId: data.parentId ? parseInt(data.parentId) : null
     };
 
-    console.log("Submit Create Category:", payload);
-    // TODO: await categoryService.createCategory(payload);
-    
-    alert('Thêm Danh Mục thành công! Hãy xem Console để check Payload.');
-    closeDrawer();
-    fetchCategories();
+    try {
+      if (editingId) {
+        await categoryService.updateCategory(editingId, payload);
+        alert('Cập nhật Danh mục thành công!');
+      } else {
+        await categoryService.createCategory(payload);
+        alert('Thêm Danh mục thành công!');
+      }
+      closeDrawer();
+      fetchCategories();
+    } catch (error) {
+      console.error("Lỗi khi lưu Category:", error);
+      alert(error.response?.data?.message || 'Có lỗi xảy ra!');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa Danh mục này? Lưu ý: Không thể xóa nếu có danh mục con.')) {
+      try {
+        await categoryService.deleteCategory(id);
+        alert('Xóa Danh mục thành công!');
+        fetchCategories();
+      } catch (error) {
+        console.error("Lỗi khi xóa Category:", error);
+        alert(error.response?.data?.message || 'Có lỗi xảy ra khi xóa!');
+      }
+    }
   };
 
   // Đệ quy render danh mục với chức năng Expand/Collapse và Guide Line
@@ -132,8 +165,8 @@ export default function CategoryListPage() {
           {category.categoryStatus === 'DELETED' && <span className="badge-danger">Deleted</span>}
         </td>
         <td>
-          <button className="action-btn edit" title="Edit"><i className="fa fa-edit"></i></button>
-          <button className="action-btn delete" title="Delete"><i className="fa fa-trash"></i></button>
+          <button className="action-btn edit" title="Edit" onClick={() => handleEdit(category)}><i className="fa fa-edit"></i></button>
+          <button className="action-btn delete" title="Delete" onClick={() => handleDelete(category.id)}><i className="fa fa-trash"></i></button>
         </td>
       </tr>
     ];
@@ -193,7 +226,7 @@ export default function CategoryListPage() {
       )}
       <div className={`admin-drawer ${isDrawerOpen ? 'open' : ''}`}>
         <div className="admin-drawer-header">
-          <h3>Thêm Danh Mục Mới</h3>
+          <h3>{editingId ? 'Cập nhật Danh Mục' : 'Thêm Danh Mục Mới'}</h3>
           <button className="admin-drawer-close" onClick={closeDrawer}><i className="fa fa-times"></i></button>
         </div>
         

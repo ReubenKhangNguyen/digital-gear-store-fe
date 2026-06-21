@@ -42,9 +42,20 @@ axiosClient.interceptors.response.use((response) => {
   return response.data; // Trả thẳng data của response cho component
 }, (error) => {
   if (error.response && error.response.status === 401) {
-    // 401: Token hết hạn hoặc không có quyền truy cập
-    localStorage.removeItem('accessToken');
-    window.location.href = '/login'; // Điều hướng về trang đăng nhập
+    // -----------------------------------------------------------------------------
+    // KHẮC PHỤC LỖI TRANG ĐĂNG NHẬP:
+    // - Chỉ tự động đá ra màn hình '/login' nếu yêu cầu bị lỗi 401 KHÔNG phải là API Login
+    //   và trình duyệt hiện tại KHÔNG đang ở sẵn trang '/login'.
+    // - Nếu không chặn lại, khi bấm sai pass ở màn hình Login, interceptor sẽ kích hoạt
+    //   reload lại trang và xóa hết thông báo lỗi của bạn.
+    // -----------------------------------------------------------------------------
+    const isLoginRequest = error.config && error.config.url && error.config.url.includes('/auth/login');
+    const isLoginPage = window.location.pathname === '/login';
+
+    if (!isLoginRequest && !isLoginPage) {
+      localStorage.removeItem('accessToken');
+      window.location.href = '/login'; // Điều hướng về trang đăng nhập
+    }
   }
   return Promise.reject(error);
 });

@@ -1,6 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useState, useEffect } from "react";
 import authService from "../services/authService";
+import userService from "../services/userService";
+import { jwtDecode } from "jwt-decode";
 
 // Tạo một Context dùng chung để mọi Component trong App đều có thể truy cập
 // các biến như: isAuthenticated (Đã đăng nhập chưa), user (thông tin user), login, logout.
@@ -38,13 +40,12 @@ export const AuthProvider = ({ children }) => {
           const response = await authService.introspect(storedToken);
           // Backend trả về: { result: { valid: true, fullName: '...' } }
           if (response?.result?.valid) {
-             setToken(storedToken);
-             setIsAuthenticated(true);
-             setUser({
-                fullName: response.result.fullName // Lưu tên hiển thị lên Header Admin
-             });
+            const userInfoResponse = await userService.getMyInfo();
+            setToken(storedToken);
+            setIsAuthenticated(true);
+            setUser(userInfoResponse.result); // Lưu thông tin user vào state
           } else {
-             handleLogout(); // Token vớ vẩn -> Đẩy ra ngoài
+            handleLogout(); // Token vớ vẩn -> Đẩy ra ngoài
           }
         } catch (error) {
           console.error("Lỗi khi kiểm định Token (Introspect):", error);
@@ -62,10 +63,13 @@ export const AuthProvider = ({ children }) => {
   // - Lưu Token mới vào localStorage. Set biến state để các giao diện mở khóa.
   // -----------------------------------------------------------------------------
   const handleLogin = (newToken, userData) => {
+    // Giải mã Token để lấy payload
+    const decodedToken = jwtDecode(newToken);
+    const userRole = decodedToken.scope;
     localStorage.setItem("accessToken", newToken);
     setToken(newToken);
     setIsAuthenticated(true);
-    setUser(userData);
+    setUser({ ...userData, roles: userRole }); // Lưu thông tin user vào state
   };
 
   // Cung cấp các biến và hàm này xuống Toàn bộ APP

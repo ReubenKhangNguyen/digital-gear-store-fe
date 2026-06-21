@@ -2,31 +2,120 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import productService from '../../services/productService';
 
+import categoryService from '../../services/categoryService';
+
 export default function ProductListPage() {
   const navigate = useNavigate();
   // -----------------------------------------------------------------------------
   // STATE LƯU TRỮ SẢN PHẨM Ở COMPONENT
-  // - Khi API lấy được danh sách `ProductListResponseDTO.java`, nó sẽ được nạp vào
-  //   biến `products` này để render ra lưới Table phía dưới.
   // -----------------------------------------------------------------------------
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Pagination & Search States
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [keyword, setKeyword] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+  const [categoriesTree, setCategoriesTree] = useState([]);
 
-  // useEffect: Chạy đúng 1 lần khi màn hình này vừa bật lên (Nhờ có mảng [] ở cuối)
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await productService.getAllProducts();
-        const data = response.result || response;
-        setProducts(data);
-      } catch (error) {
-        console.error("Failed to fetch products", error);
-      } finally {
-        setIsLoading(false);
-      }
+  // Hàm đệ quy lấy tất cả ID con của một danh mục
+  const getAllDescendantCategoryIds = (catId, tree) => {
+    let result = new Set();
+    if (!catId) return [];
+    result.add(Number(catId));
+    const findChildren = (cats) => {
+      cats.forEach(cat => {
+        if (result.has(cat.id) || result.has(cat.parentId)) {
+          result.add(cat.id);
+          if (cat.categoryChild) findChildren(cat.categoryChild);
+        } else {
+          if (cat.categoryChild) findChildren(cat.categoryChild);
+        }
+      });
     };
-    fetchProducts();
+    findChildren(tree);
+    findChildren(tree); // 2 lần để đảm bảo lấy hết cấp sâu hơn
+    return Array.from(result);
+  };
+
+  const fetchProducts = async () => {
+    setIsLoading(true);
+    try {
+      const params = {
+        page,
+        size,
+        keyword: keyword || undefined
+      };
+      
+      if (categoryId) {
+        const expandedIds = getAllDescendantCategoryIds(categoryId, categoriesTree);
+        params.categoryIds = expandedIds.join(',');
+      }
+
+      const response = await productService.searchProducts(params);
+      if (response.result && response.result.content) {
+        setProducts(response.result.content);
+        setTotalPages(response.result.totalPages);
+      } else {
+        setProducts([]);
+        setTotalPages(0);
+      }
+    } catch (error) {
+      console.error("Failed to fetch products", error);
+      setProducts([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const res = await categoryService.getCategoryTree();
+      if (res.result) setCategoriesTree(res.result);
+    } catch (error) {
+      console.error("Failed to fetch categories", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
   }, []);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchProducts();
+    }, 300); // Debounce search
+    return () => clearTimeout(delayDebounceFn);
+  }, [keyword, categoryId, page, size, categoriesTree]);
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Bạn có chắc chắn muốn ngừng kinh doanh (Xóa mềm) sản phẩm này?')) {
+      try {
+        await productService.deleteProduct(id);
+        alert('Đã xóa sản phẩm thành công!');
+        fetchProducts();
+      } catch (error) {
+        console.error("Lỗi khi xóa Product:", error);
+        alert(error.response?.data?.message || 'Có lỗi xảy ra khi xóa!');
+      }
+    }
+  };
+
+  // Render Category Options (chỉ lấy level 1 và 2 cho ngắn gọn)
+  const renderCategoryOptions = () => {
+    const options = [];
+    categoriesTree.forEach(cat => {
+      options.push(<option key={cat.id} value={cat.id}>{cat.name}</option>);
+      if (cat.categoryChild) {
+        cat.categoryChild.forEach(child => {
+          options.push(<option key={child.id} value={child.id}>-- {child.name}</option>);
+        });
+      }
+    });
+    return options;
+  };
 
   return (
     <div>
@@ -43,13 +132,23 @@ export default function ProductListPage() {
       <div className="admin-card">
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
           <div style={{ width: '300px' }}>
-            <input type="text" className="input" placeholder="Search products..." />
+            <input 
+              type="text" 
+              className="input" 
+              placeholder="Search products..." 
+              value={keyword}
+              onChange={e => { setKeyword(e.target.value); setPage(0); }}
+            />
           </div>
           <div>
-            <select className="input" style={{ width: '200px' }}>
+            <select 
+              className="input" 
+              style={{ width: '200px' }}
+              value={categoryId}
+              onChange={e => { setCategoryId(e.target.value); setPage(0); }}
+            >
               <option value="">Lọc theo danh mục...</option>
-              <option value="Laptop">Laptop</option>
-              <option value="Smartphone">Smartphone</option>
+              {renderCategoryOptions()}
             </select>
           </div>
         </div>
@@ -99,8 +198,8 @@ export default function ProductListPage() {
                         )}
                       </td>
                       <td>
-                        <button className="action-btn edit" title="Edit"><i className="fa fa-edit"></i></button>
-                        <button className="action-btn delete" title="Delete"><i className="fa fa-trash"></i></button>
+                        <button className="action-btn edit" title="Edit" onClick={() => navigate(`/admin/products/update/${product.id}`)}><i className="fa fa-edit"></i></button>
+                        <button className="action-btn delete" title="Delete" onClick={() => handleDelete(product.id)}><i className="fa fa-trash"></i></button>
                       </td>
                     </tr>
                   );
@@ -112,16 +211,27 @@ export default function ProductListPage() {
             </table>
           </div>
         )}
-        
-        {/* Pagination mock */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
-          <ul className="store-pagination" style={{ margin: 0 }}>
-            <li className="active">1</li>
-            <li><a href="#">2</a></li>
-            <li><a href="#">3</a></li>
-            <li><a href="#"><i className="fa fa-angle-right"></i></a></li>
-          </ul>
-        </div>
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+            <ul className="store-pagination" style={{ margin: 0 }}>
+              {page > 0 && (
+                <li><a href="#" onClick={(e) => { e.preventDefault(); setPage(page - 1); }}><i className="fa fa-angle-left"></i></a></li>
+              )}
+              {Array.from({ length: totalPages }).map((_, i) => (
+                <li key={i} className={page === i ? "active" : ""}>
+                  {page === i ? (
+                    i + 1
+                  ) : (
+                    <a href="#" onClick={(e) => { e.preventDefault(); setPage(i); }}>{i + 1}</a>
+                  )}
+                </li>
+              ))}
+              {page < totalPages - 1 && (
+                <li><a href="#" onClick={(e) => { e.preventDefault(); setPage(page + 1); }}><i className="fa fa-angle-right"></i></a></li>
+              )}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );

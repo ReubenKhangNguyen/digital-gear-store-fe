@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useContext } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import categoryService from "../../services/categoryService";
 import { AuthContext } from "../../context/AuthContext";
+import { CartContext } from "../../context/CartContext";
 
 
 // =========================================================
@@ -43,8 +45,17 @@ const MenuItem = ({ category, depth = 1 }) => {
 // MAIN HEADER COMPONENT
 // =========================================================
 export default function Header() {
+  const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
-  const { isAuthenticated, user, logout } = useContext(AuthContext);
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [searchCategory, setSearchCategory] = useState("");
+  const { isAuthenticated, user, logout, isLoading } = useContext(AuthContext);
+  const { cartItems, totalQuantity, totalPrice, removeCartItem } = useContext(CartContext);
+
+  const formatPrice = (amount) => {
+    if (!amount) return "0 ₫";
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+  };
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -73,17 +84,29 @@ export default function Header() {
               <li><a href="#"><i className="fa fa-envelope-o"></i> email@email.com</a></li>
             </ul>
             <ul className="header-links pull-right">
-              {isAuthenticated ? (
-                <>
-                  <li><a href="#"><i className="fa fa-user-o"></i>{user?.fullName}</a></li>
-                  <li><a href="#" onClick={(e) => { e.preventDefault(); logout(); }}><i className="fa fa-sign-out"></i> Đăng xuất</a></li>
-                </>
-              ) : (
-                <>
-                  <li><a href="/login"><i className="fa fa-user-o"></i> Đăng nhập</a></li>
-                  <li><a href="/register"><i className="fa fa-user-plus"></i> Đăng ký</a></li>
-                </>
-              )}
+              {
+                isLoading ? (
+                  <li><a href="#"><i className="fa fa-spinner fa-spin"></i> Đang tải...</a></li>
+                ) : isAuthenticated ? (
+                  <>
+                    {/* Chỉ render dòng <li> này nếu user là ADMIN */}
+                    {user?.roles?.includes('ADMIN') && (
+                      <li>
+                        <Link to="/admin">
+                          <i className="fa fa-cog"></i> Trang Quản Trị
+                        </Link>
+                      </li>
+                    )}
+                    <li><Link to="/profile"><i className="fa fa-user-o"></i> {user?.fullName}</Link></li>
+                    <li><Link to="/my-orders"><i className="fa fa-shopping-bag"></i> Đơn hàng của tôi</Link></li>
+                    <li><a href="#" onClick={(e) => { e.preventDefault(); logout(); }}><i className="fa fa-sign-out"></i> Đăng xuất</a></li>
+                  </>
+                ) : (
+                  <>
+                    <li><a href="/login"><i className="fa fa-user-o"></i> Đăng nhập</a></li>
+                    <li><a href="/register"><i className="fa fa-user-plus"></i> Đăng ký</a></li>
+                  </>
+                )}
             </ul>
           </div>
         </div>
@@ -93,31 +116,28 @@ export default function Header() {
             <div className="row">
               <div className="col-md-3">
                 <div className="header-logo">
+                  
                   <a href="/" className="logo"><img src="/img/logo.png" alt="KhangTrí Tech" /></a>
                 </div>
               </div>
 
               <div className="col-md-6">
                 <div className="header-search">
-                  <form>
-                    {/* TODO (Backend - Module Catalog): Tích hợp API Danh mục
-                        - Gọi GET /api/v1/categories.
-                        - Dùng hàm .map() duyệt mảng JSON trả về để tự động render ra các thẻ <option>.
-                    */}
-                    <select className="input-select">
-                      <option value="0">All Categories</option>
-                      <option value="1">Category 01</option>
-                      <option value="1">Category 02</option>
+                  <form style={{ display: 'flex' }} onSubmit={(e) => {
+                    e.preventDefault();
+                    let url = `/store?keyword=${encodeURIComponent(searchKeyword.trim())}`;
+                    if (searchCategory) url += `&categoryIds=${searchCategory}`;
+                    navigate(url);
+                  }}>
+                    <select className="input-select" value={searchCategory} onChange={e => setSearchCategory(e.target.value)}>
+                      <option value="">All Categories</option>
+                      {categories.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))}
                     </select>
 
-                    {/* TODO (Backend - Module Catalog): Tích hợp Thanh tìm kiếm thông minh
-                        - Bắt sự kiện onChange của input này.
-                        - Áp dụng kỹ thuật Debounce (đợi 500ms sau khi ngừng gõ) rồi mới gọi API:
-                          GET /api/v1/products?keyword={giá_trị_nhập}.
-                        - Render một khối dropdown kết quả gợi ý ngay bên dưới ô tìm kiếm.
-                    */}
-                    <input className="input" placeholder="Search here" />
-                    <button className="search-btn" type="button">Search</button>
+                    <input className="input" placeholder="Search here" value={searchKeyword} onChange={e => setSearchKeyword(e.target.value)} />
+                    <button className="search-btn" type="submit">Search</button>
                   </form>
                 </div>
               </div>
@@ -142,40 +162,41 @@ export default function Header() {
                   <div className="dropdown">
                     <a className="dropdown-toggle" data-toggle="dropdown" aria-expanded="true" href="#">
                       <i className="fa fa-shopping-cart"></i>
-                      <span>Your Cart</span>
-                      {/* TODO (Backend - Module Order): Số lượng giỏ hàng
-                          - Thay số '3' cứng bằng biến state {cartTotalItems}.
-                          - Lấy data từ API GET /api/v1/orders/cart (cần có JWT Token).
-                      */}
-                      <div className="qty">3</div>
+                      <span>Giỏ Hàng</span>
+                      <div className="qty">{totalQuantity}</div>
                     </a>
 
-                    {/* TODO (Backend - Module Order): Chi tiết giỏ hàng thu nhỏ
-                        - Khi hover/click mở dropdown này, dùng .map() duyệt qua mảng cart.items để render các <div className="product-widget">.
-                        - Lấy hình ảnh (ProductImage), tên (ProductName), giá (Price) và số lượng (Quantity) đổ vào đây.
-                        - Thay số $2940.00 bằng biến {cartTotalPrice} tính toán từ Backend trả về.
-                    */}
                     <div className="cart-dropdown">
                       <div className="cart-list">
-                        <div className="product-widget">
-                          <div className="product-img">
-                            <img src="/img/product01.png" alt="" />
+                        {cartItems.slice(0, 5).map((item) => (
+                          <div className="product-widget" key={item.id}>
+                            <div className="product-img">
+                              <img src={item.thumbnailUrl || "/img/product01.png"} alt={item.productName} />
+                            </div>
+                            <div className="product-body">
+                              <h3 className="product-name"><Link to={`/product/${item.productId}`}>{item.productName}</Link></h3>
+                              <h4 className="product-price"><span className="qty">{item.quantity}x</span>{formatPrice(item.price)}</h4>
+                            </div>
+                            <button className="delete" onClick={() => removeCartItem(item.id)}>
+                              <i className="fa fa-close"></i>
+                            </button>
                           </div>
-                          <div className="product-body">
-                            <h3 className="product-name"><a href="#">product name goes here</a></h3>
-                            <h4 className="product-price"><span className="qty">1x</span>$980.00</h4>
-                          </div>
-                          <button className="delete"><i className="fa fa-close"></i></button>
-                        </div>
+                        ))}
                       </div>
 
+                      {cartItems.length > 5 && (
+                        <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '12px', color: '#888' }}>
+                          Và {cartItems.length - 5} sản phẩm khác trong giỏ...
+                        </div>
+                      )}
+
                       <div className="cart-summary">
-                        <small>3 Item(s) selected</small>
-                        <h5>SUBTOTAL: $2940.00</h5>
+                        <small>{totalQuantity} Item(s) selected</small>
+                        <h5>SUBTOTAL: {formatPrice(totalPrice)}</h5>
                       </div>
                       <div className="cart-btns">
-                        <a href="#">View Cart</a>
-                        <a href="#">Checkout  <i className="fa fa-arrow-circle-right"></i></a>
+                        <Link to="/cart">Xem Giỏ Hàng</Link>
+                        <Link to="/checkout">Checkout  <i className="fa fa-arrow-circle-right"></i></Link>
                       </div>
                     </div>
                   </div>
